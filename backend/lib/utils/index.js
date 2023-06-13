@@ -14,7 +14,7 @@ const getDocFromText = (dom) => [...dom.matchAll(/"xsaid"><a href="(.*)"><.*>(.*
  */
 const getMaxPages = (threadNumber) => {
   const result = threadNumber.match(/var totalpages = (\d+);/);
-  return result.at(1) ?? 1;
+  return result?.at(1) ?? 1;
 };
 
 /**
@@ -26,8 +26,8 @@ const getMaxPages = (threadNumber) => {
 const getUsersFromPage = (doc) => {  
   const getAllUsers = getDocFromText(doc).map(function(node) {
       return { 
-        nickname: node.at(2),
-        href: "https://fxp.co.il" + node.at(1)
+        nickname: node?.at(2),
+        href: "https://fxp.co.il/" + node?.at(1)
       };
   });
 
@@ -68,7 +68,7 @@ const getRandomUsers = (usersList, usersAmount) => {
 const getThreadInitiator = (threadNumber) => {
   const regex = /"xsaid" itemprop="author" content="(.*)"><a/;
   const result = threadNumber.match(regex);
-  return result.at(1) ?? null;
+  return result?.at(1) ?? null;
 }
 
 module.exports = {
