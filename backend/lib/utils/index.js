@@ -1,23 +1,9 @@
-const config = require("../config");
-const jsdom = require("jsdom");
-const fetcher = require("../service");
-
 /**
  * Gets DOM as a string and returned parsed DOM.
  * @param {string} dom
  * @returns
  */
-const getDocFromText = (dom) => new jsdom.JSDOM(dom).window.document;
-
-/**
- * Standard fetcher for FxP.co.il Document
- * @param {string} threadNumber
- * @returns
- */
-const fxpFetcher = (threadNumber) =>
-  fetcher(config.url.fxp + threadNumber)
-    .then((res) => res.text())
-    .then((res) => getDocFromText(res));
+const getDocFromText = (dom) => [...dom.matchAll(/"xsaid"><a href="(.*)"><.*>(.*)<\/s/g)];
 
 /**
  * Calls FxP Thread with unrealistic amount of pages
@@ -26,15 +12,9 @@ const fxpFetcher = (threadNumber) =>
  * @param {string} threadNumber FxP thread id
  * @returns {number}
  */
-const getMaxPages = async (threadNumber) => {
-  const maxPageURL = config.url.fxp + threadNumber + "&page=1000000&pp=40";
-  const docResult = await fetch(maxPageURL).then((res) =>
-    res.redirected ? res.url : config.url.fxp + threadNumber
-  );
-  const docResultURL = new URL(docResult).searchParams.get("page");
-
-  if (!docResultURL || isNaN(+docResultURL)) return 1;
-  return +docResultURL;
+const getMaxPages = (threadNumber) => {
+  const result = threadNumber.match(/var totalpages = (\d+);/);
+  return result.at(1) ?? 1;
 };
 
 /**
@@ -43,27 +23,15 @@ const getMaxPages = async (threadNumber) => {
  * @param {string} doc
  * @returns
  */
-const getUsersFromPage = (doc) => {
-  const htmlDoc = getDocFromText(doc);
-  const getAllUsers = htmlDoc.querySelectorAll("a.username");
-  const usersObject = [];
-  const uniqueUsers = [];
-  let threadInitiator = "";
-
-  getAllUsers.forEach((node, i) => {
-    const link = node.href;
-    const nickname = node.children[0].children[0].textContent;
-    if (i === 0) {
-      threadInitiator = nickname;
-    } else {
-      if (!uniqueUsers.includes(usersObject) && threadInitiator !== nickname) {
-        usersObject.push(nickname);
-        uniqueUsers.push({ nickname: nickname, href: link });
-      }
-    }
+const getUsersFromPage = (doc) => {  
+  const getAllUsers = getDocFromText(doc).map(function(node) {
+      return { 
+        nickname: node.at(2),
+        href: "https://fxp.co.il" + node.at(1)
+      };
   });
 
-  return uniqueUsers;
+  return getAllUsers;
 };
 
 /**
@@ -97,10 +65,16 @@ const getRandomUsers = (usersList, usersAmount) => {
     : usersList;
 };
 
+const getThreadInitiator = (threadNumber) => {
+  const regex = /"xsaid" itemprop="author" content="(.*)"><a/;
+  const result = threadNumber.match(regex);
+  return result.at(1) ?? null;
+}
+
 module.exports = {
-  fxpFetcher,
   getDocFromText,
   getMaxPages,
   getRandomUsers,
   getUsersFromPage,
+  getThreadInitiator
 };
