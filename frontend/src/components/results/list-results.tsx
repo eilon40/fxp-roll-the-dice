@@ -28,7 +28,7 @@ const ListResults = ({ data, title, isOpen }: IListResultsProps) => {
             >
               <b>{user.order ?? i + 1}</b>.{" "}
               <a
-                href={"http://www.fxp.co.il/" + user.href}
+                href={user.href}
                 target="_blank"
                 className="font-bold text-slate-600 hover:text-cyan-600 duration-300 ease-in-out"
               >
